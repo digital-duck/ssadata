@@ -31,3 +31,9 @@ add_question_sql
 add_ddl
 add_documentation
 ```
+
+## Roadmap
+
+### support DeepSeek
+
+### support Llama via Groq

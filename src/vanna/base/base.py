@@ -403,29 +403,29 @@ class VannaBase(ABC):
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
         sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.IGNORECASE | re.DOTALL)
         if sqls:
-            sql = sqls[-1]
+            sql = remove_sql_noise(sqls[-1])
             vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return remove_sql_noise(sql)
+            return sql
 
         # If the llm_response is not markdown formatted, extract last sql by finding select and ; in the response
         sqls = re.findall(r"SELECT.*?;", llm_response, re.IGNORECASE | re.DOTALL)
         if sqls:
-            sql = sqls[-1]
+            sql = remove_sql_noise(sqls[-1])
             vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return remove_sql_noise(sql)
+            return sql
 
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
         sqls = re.findall(r"```sql\n(.*)```", llm_response, re.IGNORECASE | re.DOTALL)
         if sqls:
-            sql = sqls[-1]
+            sql = remove_sql_noise(sqls[-1])
             vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return remove_sql_noise(sql)
+            return sql
 
         sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
         if sqls:
-            sql = sqls[-1]
+            sql = remove_sql_noise(sqls[-1])
             vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return remove_sql_noise(sql)
+            return sql
 
         return llm_response
 

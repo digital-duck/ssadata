@@ -105,10 +105,17 @@ def strip_brackets(ddl):
     pattern = r"\[([^\]]+)]"  # Match any character except ] within square brackets
     return re.sub(pattern, r"\1", ddl)
 
+
 def remove_sql_noise(sql):
+    # First remove intermediate_sql and final_sql markers
     if 'intermediate_sql' in sql or 'final_sql' in sql:
         sql = sql.replace('intermediate_sql', '').replace('final_sql', '')
-    return sql 
+    
+    # Remove "with ... :" explanation text at the start
+    sql = re.sub(r'with\s+.*?:', '', sql, flags=re.IGNORECASE)
+    
+    return sql.strip()  # Added strip() to remove any extra whitespace
+
 
 def extract_sql(llm_response: str, **kwargs) -> str:
     """
