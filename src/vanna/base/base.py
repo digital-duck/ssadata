@@ -400,6 +400,20 @@ class VannaBase(ABC):
             str: The extracted SQL query.
         """
 
+        # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
+        sqls = re.findall(r"```sql\n(.*)```", llm_response, re.IGNORECASE | re.DOTALL)
+        if sqls:
+            sql = remove_sql_noise(sqls[-1])
+            vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
+            return sql
+
+        sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
+        if sqls:
+            sql = remove_sql_noise(sqls[-1])
+            vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
+            return sql
+
+
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
         sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.IGNORECASE | re.DOTALL)
         if sqls:
@@ -414,18 +428,6 @@ class VannaBase(ABC):
             vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
             return sql
 
-        # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
-        sqls = re.findall(r"```sql\n(.*)```", llm_response, re.IGNORECASE | re.DOTALL)
-        if sqls:
-            sql = remove_sql_noise(sqls[-1])
-            vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return sql
-
-        sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
-        if sqls:
-            sql = remove_sql_noise(sqls[-1])
-            vn_log(title=LogTag.EXTRACTED_SQL, message=f"{sql}")
-            return sql
 
         return llm_response
 
@@ -901,6 +903,7 @@ class VannaBase(ABC):
             "4. Please use the most relevant table(s). \n"
             "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
             f"6. Ensure that the output SQL is {self.dialect} SQL Database compliant and executable, and free of syntax errors. \n"
+            "7. Place the generated SQL inside a Markdown sql code block. \n"
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -1049,6 +1052,7 @@ class VannaBase(ABC):
 
         system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
 
+        #  place the generated code inside a Markdown code block
         message_log = [
             self.system_message(system_msg),
             self.user_message(f"""
@@ -1057,7 +1061,7 @@ class VannaBase(ABC):
                 If the dataframe has more than {max_rows} rows, 
                 use 'df.head({max_rows})' to limit the data.
                 If there is only one value in the dataframe, use an Indicator. 
-                Respond with only Python code. 
+                Respond with only Python code
                 Do not answer with any explanations -- just the code.
                 """
             ),
