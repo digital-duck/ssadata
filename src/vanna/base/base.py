@@ -164,6 +164,10 @@ def collect_err_msg(answer):
 #=================================
 # helper functions
 #=================================
+# ToDo: 
+def keep_last_n_messages(prompt_json, n=0):
+    pass 
+
 
 def keep_latest_messages(prompt_json):
     latest_messages = {}
