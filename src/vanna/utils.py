@@ -179,3 +179,59 @@ def snake_case(s):
     s = re.sub(r'[^a-zA-Z0-9]', '_', s)
     s = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s)
     return re.sub('_+', '_', s.lower()).strip('_')
+
+
+def take_last_n_messages(prompt_json, n=1, include_roles=['assistant', 'user', 'model', 'human'], exclude_roles=None):
+    """ Take last N messages from chat history
+
+    Args:
+        prompt_json (list): chat history
+        n (int): number of past chats to use:
+            1: latest chat history to add (default)
+            -1: all chat history to add
+            n: given number of past chats to add
+        include_roles (list): only include messages with these roles
+            ['assistant', 'user', 'model', 'human']: default includes main conversation roles
+            None: include all roles not in exclude_roles
+        exclude_roles (list): exclude messages with these roles
+            None: don't exclude any roles beyond those not in include_roles (default)
+            
+    Common roles in chat interactions:
+        'system': Initial instructions or configuration for the conversation
+        'user' or 'human': Messages from the human/user
+        'assistant' or 'model': Responses from the AI assistant/model
+        'function' or 'tool': Outputs from function or tool calls
+        'function_call' or 'tool_call': Representation of calls to functions/tools
+        'context' or 'knowledge': Retrieved information in RAG systems
+        'example': Examples for few-shot learning
+        'critique' or 'feedback': Self-critique or external feedback
+        'search': Search results from web searching
+        'plugin' or 'app': Messages from integrated plugins or applications
+        'metadata': Metadata about the conversation
+        
+    Return:
+        list of latest N chats
+    """
+    if n == 0:
+        return []
+    
+    # Filter messages based on roles
+    filtered_messages = prompt_json
+    
+    if exclude_roles:
+        filtered_messages = [msg for msg in filtered_messages if msg.get('role') not in exclude_roles]
+    
+    if include_roles:
+        filtered_messages = [msg for msg in filtered_messages if msg.get('role') in include_roles]
+    
+    # Return all messages if n is negative
+    if n < 0:
+        return filtered_messages
+    
+    # Get the specified number of past chats
+    if len(filtered_messages) <= n:
+        return filtered_messages
+    else:
+        return filtered_messages[-n:]
+
+

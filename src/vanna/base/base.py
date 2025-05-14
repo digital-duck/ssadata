@@ -105,6 +105,7 @@ from ..utils import (
     validate_config_path, 
     strip_brackets, 
     remove_sql_noise,
+    take_last_n_messages,
     # extract_sql  # To verify
 )
 
@@ -164,11 +165,6 @@ def collect_err_msg(answer):
 #=================================
 # helper functions
 #=================================
-# ToDo: 
-def keep_last_n_messages(prompt_json, n=0):
-    pass 
-
-
 def keep_latest_messages(prompt_json):
     latest_messages = {}
     
@@ -304,7 +300,7 @@ class VannaBase(ABC):
         return message_log
 
 
-    def generate_sql(self, question: str, allow_llm_to_see_data=False, print_prompt=True, print_response=True, use_latest_message=False, **kwargs) -> str:
+    def generate_sql(self, question: str, allow_llm_to_see_data=False, print_prompt=True, print_response=True, use_last_n_message=1, **kwargs) -> str:
         """
         Example:
         ```python
@@ -347,8 +343,8 @@ class VannaBase(ABC):
             **kwargs,
         )
 
-        if use_latest_message:
-            prompt = keep_latest_messages(prompt)
+        prompt = take_last_n_messages(prompt, n=use_last_n_message)
+
         vn_log(title=LogTag.SQL_PROMPT, message=prompt, off_flag=not print_prompt)
         llm_response = self.submit_prompt(prompt, print_prompt=print_prompt, print_response=print_response, **kwargs)
         vn_log(title=LogTag.LLM_RESPONSE, message=llm_response, off_flag=not print_response)
@@ -926,7 +922,7 @@ class VannaBase(ABC):
 
     def get_llm_prompt(
         self,
-        question: str,
+        question: Union[str,list],
         **kwargs,
     ):
         """
@@ -949,7 +945,10 @@ class VannaBase(ABC):
 
         initial_prompt = "You are an expert AI assistant, answer me the following question:\n"
         message_log = [self.system_message(initial_prompt)]
-        message_log.append(self.user_message(question))
+        if isinstance(question,list):
+            message_log.extend(question)
+        else:
+            message_log.append(self.user_message(str(question)))
         return message_log
 
     def get_followup_questions_prompt(
@@ -1998,7 +1997,7 @@ class VannaBase(ABC):
         print_response: bool = False,  # show response
         print_results: bool = True,   # show results
         auto_train: bool = True,
-        use_latest_message: bool = False,
+        use_last_n_message: int = 1,
         separator: str = SEPARATOR,
         tag_id: str = "",
         sleep_sec: int = 1,
@@ -2017,7 +2016,7 @@ class VannaBase(ABC):
             print_response (bool): Print LLM Response, useful for debugging (default=False) 
             print_results (bool): Show results such as generated SQL, queried dataframe, plotly chart (default=True) 
             auto_train (bool): Add valid (question,generated_sql) pair to Training dataset (default=True) 
-            use_latest_message (bool): keep only the latest user query by removing prior context (default=False) 
+            use_last_n_message (int): 1 (default), 0 - no history, -1 - all history, N - last number of chats
             separator (str): message tag (default=80*'='),
             tag_id (str): question tag (default=""),
             sleep_sec (int) Sleep time between retries (default=1 sec),
@@ -2045,7 +2044,7 @@ class VannaBase(ABC):
                             sql_row_limit=sql_row_limit, 
                             print_prompt=print_prompt, 
                             print_response=print_response, 
-                            use_latest_message=use_latest_message,
+                            use_last_n_message=use_last_n_message,
                             semantic_search=semantic_search)
             err_msg, has_error = collect_err_msg(answer)
             if semantic_search or ((not answer.has_error) and (not has_error)):
@@ -2061,7 +2060,7 @@ class VannaBase(ABC):
                                 sql_row_limit=sql_row_limit, 
                                 print_prompt=print_prompt, 
                                 print_response=print_response, 
-                                use_latest_message=use_latest_message)
+                                use_last_n_message=use_last_n_message)
                 err_msg, has_error = collect_err_msg(answer)
                 if not answer.has_error and (not has_error):
                     return answer
@@ -2082,7 +2081,7 @@ class VannaBase(ABC):
                                 sql_row_limit=sql_row_limit, 
                                 print_prompt=print_prompt, 
                                 print_response=print_response, 
-                                use_latest_message=use_latest_message)
+                                use_last_n_message=use_last_n_message)
                 if not answer.has_error and (not has_error):
                     break
 
@@ -2100,7 +2099,7 @@ class VannaBase(ABC):
         sql_row_limit: int = 20,   # control number of rows returned: -1 for no limit
         print_prompt: bool = False,    # show prompt
         print_response: bool = False,  # show response
-        use_latest_message: bool = False,
+        use_last_n_message: int = 1,
         semantic_search: bool = False,
         dataset: str = "default",
     ) -> AskResult:
@@ -2123,7 +2122,7 @@ class VannaBase(ABC):
             sql_row_limit (int): Maximum number of rows to return, -1 for no limit (default=20)
             print_prompt (bool): Print prompt, useful for debugging (default=False) 
             print_response (bool): Print LLM Response, useful for debugging (default=False) 
-            use_latest_message (bool): keep only the latest user query by removing prior context (default=False) 
+            use_last_n_message (int): 1 (default), 0 - no history, -1 - all history, N - last number of chats
             semantic_search (bool): search schema and skip generating SQL (default=False)
 
         Returns:
@@ -2169,7 +2168,7 @@ class VannaBase(ABC):
                     allow_llm_to_see_data=allow_llm_to_see_data, 
                     print_prompt=print_prompt, 
                     print_response=print_response, 
-                    use_latest_message=use_latest_message,
+                    use_last_n_message=use_last_n_message,
                     dataset=dataset,
                 )
             
@@ -2304,7 +2303,7 @@ class VannaBase(ABC):
 
     def ask_llm(
         self,
-        question: str,
+        question: Union[str,None],
         print_prompt: bool = True,    # show prompt
         print_response: bool = True,  # show response
     ) -> str:
