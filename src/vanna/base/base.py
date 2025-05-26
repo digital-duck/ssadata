@@ -300,7 +300,10 @@ class VannaBase(ABC):
         return message_log
 
 
-    def generate_sql(self, question: str, allow_llm_to_see_data=False, print_prompt=True, print_response=True, use_last_n_message=1, **kwargs) -> str:
+    def generate_sql(self, question: str, allow_llm_to_see_data=False, 
+                     print_prompt=True, print_response=True, 
+                     use_last_n_message=1, 
+                     **kwargs) -> str:
         """
         Example:
         ```python
@@ -331,6 +334,8 @@ class VannaBase(ABC):
             initial_prompt = self.config.get("initial_prompt", None)
         else:
             initial_prompt = None
+
+
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
@@ -342,6 +347,7 @@ class VannaBase(ABC):
             doc_list=doc_list,
             **kwargs,
         )
+
 
         prompt = take_last_n_messages(prompt, n=use_last_n_message)
 

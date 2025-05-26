@@ -217,6 +217,11 @@ def take_last_n_messages(prompt_json, n=1, include_roles=['assistant', 'user', '
     
     # Filter messages based on roles
     filtered_messages = prompt_json
+    # print(f"[dbg] {type(filtered_messages)}\n{filtered_messages}")
+    
+    last_msg = filtered_messages[-1]
+    if not isinstance(last_msg, dict): 
+        return filtered_messages
     
     if exclude_roles:
         filtered_messages = [msg for msg in filtered_messages if msg.get('role') not in exclude_roles]
