@@ -910,6 +910,7 @@ class VannaBase(ABC):
             "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
             f"6. Ensure that the output SQL is {self.dialect} SQL Database compliant and executable, and free of syntax errors. \n"
             "7. Place the generated SQL inside a Markdown sql code block. \n"
+            "8. Please generate one single SQL command, DO NOT INCLUDE ANY EXPLANATION"
         )
 
         message_log = [self.system_message(initial_prompt)]
