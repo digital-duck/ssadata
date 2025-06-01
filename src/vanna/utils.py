@@ -212,6 +212,9 @@ def take_last_n_messages(prompt_json, n=1, include_roles=['assistant', 'user', '
     Return:
         list of latest N chats
     """
+    if not prompt_json: 
+        return []
+    
     if n == 0:
         return []
     
@@ -219,6 +222,9 @@ def take_last_n_messages(prompt_json, n=1, include_roles=['assistant', 'user', '
     filtered_messages = prompt_json
     # print(f"[dbg] {type(filtered_messages)}\n{filtered_messages}")
     
+    if len(filtered_messages) < 1:
+        return filtered_messages
+
     last_msg = filtered_messages[-1]
     if not isinstance(last_msg, dict): 
         return filtered_messages
@@ -232,11 +238,11 @@ def take_last_n_messages(prompt_json, n=1, include_roles=['assistant', 'user', '
     # Return all messages if n is negative
     if n < 0:
         return filtered_messages
-    
-    # Get the specified number of past chats
-    if len(filtered_messages) <= n:
+
+    if len(filtered_messages) < 1 or len(filtered_messages) < n:
         return filtered_messages
-    else:
-        return filtered_messages[-n:]
+
+    # Get the specified number of past chats
+    return filtered_messages[-n:]
 
 

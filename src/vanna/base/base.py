@@ -2317,6 +2317,7 @@ class VannaBase(ABC):
         """
         Ask LLM model directly (no RAG)
         """
+        print(f"[DEBUG] {question}")
         prompt = self.get_llm_prompt(question)
         vn_log(title=LogTag.SHOW_LLM, message=question, off_flag=not print_prompt)
         llm_response = self.submit_prompt(prompt=prompt, print_prompt=print_prompt, print_response=print_response)
